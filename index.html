@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Lift Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .building {
+            display: flex;
+            width: 800px;
+            margin: 0 auto;
+            background-color: #ddd;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        
+        .floors {
+            flex: 1;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        
+        .floor {
+            height: 120px;
+            border-bottom: 2px solid #999;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+        }
+        
+        .floor-label {
+            font-weight: bold;
+            margin-right: 20px;
+            width: 30px;
+        }
+        
+        .lifts-container {
+            width: 200px;
+            position: relative;
+        }
+        
+        .lift {
+            width: 80px;
+            height: 100px;
+            background-color: #555;
+            position: absolute;
+            left: 10px;
+            transition: bottom 2s linear;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        
+        .lift:nth-child(2) {
+            left: 110px;
+        }
+        
+        .lift-door {
+            background-color: #888;
+            width: 35px;
+            height: 100%;
+            transition: width 0.5s;
+        }
+        
+        .lift-left-door {
+            float: left;
+        }
+        
+        .lift-right-door {
+            float: right;
+        }
+        
+        .lift.open .lift-left-door,
+        .lift.open .lift-right-door {
+            width: 0;
+        }
+        
+        .lift-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px;
+            background-color: #333;
+        }
+        
+        .lift-controls button {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: none;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        
+        .lift-controls button.active {
+            background-color: #ff0;
+        }
+        
+        .floor-controls {
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .floor-controls button {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .floor-controls button.up {
+            background-color: #4CAF50;
+        }
+        
+        .floor-controls button.down {
+            background-color: #f44336;
+        }
+        
+        .controls-panel {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Building Lift Simulation</h1>
+    
+    <div class="building">
+        <div class="floors">
+            <div class="floor" data-floor="1">
+                <span class="floor-label">1</span>
+                <div class="floor-controls">
+                    <button class="up" onclick="callLift(1, 'up')">▲</button>
+                </div>
+            </div>
+            <div class="floor" data-floor="2">
+                <span class="floor-label">2</span>
+                <div class="floor-controls">
+                    <button class="up" onclick="callLift(2, 'up')">▲</button>
+                    <button class="down" onclick="callLift(2, 'down')">▼</button>
+                </div>
+            </div>
+            <div class="floor" data-floor="3">
+                <span class="floor-label">3</span>
+                <div class="floor-controls">
+                    <button class="up" onclick="callLift(3, 'up')">▲</button>
+                    <button class="down" onclick="callLift(3, 'down')">▼</button>
+                </div>
+            </div>
+            <div class="floor" data-floor="4">
+                <span class="floor-label">4</span>
+                <div class="floor-controls">
+                    <button class="down" onclick="callLift(4, 'down')">▼</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="lifts-container">
+            <div class="lift" data-lift="1" data-floor="1" style="bottom: 0;">
+                <div class="lift-doors">
+                    <div class="lift-left-door"></div>
+                    <div class="lift-right-door"></div>
+                </div>
+                <div class="lift-controls">
+                    <button onclick="selectFloor(1, 1)">1</button>
+                    <button onclick="selectFloor(1, 2)">2</button>
+                    <button onclick="selectFloor(1, 3)">3</button>
+                    <button onclick="selectFloor(1, 4)">4</button>
+                </div>
+            </div>
+            <div class="lift" data-lift="2" data-floor="1" style="bottom: 0;">
+                <div class="lift-doors">
+                    <div class="lift-left-door"></div>
+                    <div class="lift-right-door"></div>
+                </div>
+                <div class="lift-controls">
+                    <button onclick="selectFloor(2, 1)">1</button>
+                    <button onclick="selectFloor(2, 2)">2</button>
+                    <button onclick="selectFloor(2, 3)">3</button>
+                    <button onclick="selectFloor(2, 4)">4</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls-panel">
+        <button onclick="resetSimulation()">Reset Simulation</button>
+    </div>
+    
+    <div class="status" id="status">
+        Status: Simulation ready. Click floor buttons to call lifts or use lift buttons to select floors.
+    </div>
+    
+    <script>
+        const lifts = [
+            { id: 1, currentFloor: 1, targetFloors: [], moving: false, direction: null },
+            { id: 2, currentFloor: 1, targetFloors: [], moving: false, direction: null }
+        ];
+        
+        const floorHeight = 120; // Height of each floor in pixels
+        const liftSpeed = 600; // Time in ms to move between floors
+        
+        function updateLiftPosition(lift) {
+            const liftElement = document.querySelector(`.lift[data-lift="${lift.id}"]`);
+            const bottomPosition = (lift.currentFloor - 1) * floorHeight;
+            liftElement.style.bottom = `${bottomPosition}px`;
+            liftElement.setAttribute('data-floor', lift.currentFloor);
+        }
+        
+        function openDoors(liftId) {
+            const liftElement = document.querySelector(`.lift[data-lift="${liftId}"]`);
+            liftElement.classList.add('open');
+            updateStatus(`Lift ${liftId} doors opened at floor ${lifts[liftId-1].currentFloor}`);
+            
+            setTimeout(() => {
+                closeDoors(liftId);
+            }, 500);
+        }
+        
+        function closeDoors(liftId) {
+            const liftElement = document.querySelector(`.lift[data-lift="${liftId}"]`);
+            liftElement.classList.remove('open');
+            updateStatus(`Lift ${liftId} doors closed at floor ${lifts[liftId-1].currentFloor}`);
+            
+            // Process next target floor if any
+            setTimeout(() => {
+                processNextFloor(liftId);
+            }, 500);
+        }
+        
+        function moveLift(liftId, targetFloor) {
+            const lift = lifts[liftId-1];
+            if (lift.moving) return;
+            
+            lift.moving = true;
+            lift.direction = targetFloor > lift.currentFloor ? 'up' : 'down';
+            
+            updateStatus(`Lift ${liftId} moving ${lift.direction} from floor ${lift.currentFloor} to floor ${targetFloor}`);
+            
+            // Calculate time based on floor difference
+            const floorDiff = Math.abs(targetFloor - lift.currentFloor);
+            const moveTime = floorDiff * liftSpeed;
+            
+            // Update position after animation completes
+            setTimeout(() => {
+                lift.currentFloor = targetFloor;
+                lift.moving = false;
+                updateLiftPosition(lift);
+                openDoors(liftId);
+                
+                // Remove this floor from target list
+                const index = lift.targetFloors.indexOf(targetFloor);
+                if (index > -1) {
+                    lift.targetFloors.splice(index, 1);
+                }
+            }, moveTime);
+            
+            // Update UI position immediately (CSS transition handles animation)
+            updateLiftPosition(lift);
+        }
+        
+        function processNextFloor(liftId) {
+            const lift = lifts[liftId-1];
+            
+            if (lift.targetFloors.length > 0) {
+                // Find the closest floor in the current direction
+                let nextFloor;
+                if (lift.direction === 'up') {
+                    const higherFloors = lift.targetFloors.filter(f => f > lift.currentFloor);
+                    nextFloor = higherFloors.length > 0 ? Math.min(...higherFloors) : Math.max(...lift.targetFloors);
+                } else if (lift.direction === 'down') {
+                    const lowerFloors = lift.targetFloors.filter(f => f < lift.currentFloor);
+                    nextFloor = lowerFloors.length > 0 ? Math.max(...lowerFloors) : Math.min(...lift.targetFloors);
+                } else {
+                    // No direction yet, find closest floor
+                    nextFloor = lift.targetFloors.reduce((prev, curr) => 
+                        Math.abs(curr - lift.currentFloor) < Math.abs(prev - lift.currentFloor) ? curr : prev
+                    );
+                }
+                
+                moveLift(liftId, nextFloor);
+            } else {
+                lift.direction = null;
+            }
+        }
+        
+        function callLift(floor, direction) {
+            updateStatus(`Call received from floor ${floor} going ${direction}`);
+            
+            // Find the best lift to respond
+            let bestLift = null;
+            let bestScore = Infinity;
+            
+            for (const lift of lifts) {
+                if (lift.moving) {
+                    // Lift is moving - check if it's going in the right direction
+                    if ((lift.direction === 'up' && direction === 'up' && floor >= lift.currentFloor) ||
+                        (lift.direction === 'down' && direction === 'down' && floor <= lift.currentFloor)) {
+                        const score = Math.abs(floor - lift.currentFloor);
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestLift = lift;
+                        }
+                    }
+                } else {
+                    // Lift is idle - calculate distance
+                    const score = Math.abs(floor - lift.currentFloor);
+                    if (score < bestScore) {
+                        bestScore = score;
+                        bestLift = lift;
+                    }
+                }
+            }
+            
+            if (bestLift) {
+                // Add to target floors if not already there
+                if (!bestLift.targetFloors.includes(floor)) {
+                    bestLift.targetFloors.push(floor);
+                    bestLift.targetFloors.sort((a, b) => a - b);
+                    updateStatus(`Assigned lift ${bestLift.id} to floor ${floor}`);
+                }
+                
+                // If lift is idle, start moving
+                if (!bestLift.moving) {
+                    processNextFloor(bestLift.id);
+                }
+            }
+        }
+        
+        function selectFloor(liftId, floor) {
+            const lift = lifts[liftId-1];
+            
+            if (!lift.targetFloors.includes(floor)) {
+                lift.targetFloors.push(floor);
+                lift.targetFloors.sort((a, b) => a - b);
+                updateStatus(`Floor ${floor} selected in lift ${liftId}`);
+                
+                // Highlight the button
+                const button = document.querySelector(`.lift[data-lift="${liftId}"] .lift-controls button:nth-child(${floor})`);
+                button.classList.add('active');
+                setTimeout(() => button.classList.remove('active'), 1000);
+                
+                // If lift is idle, start moving
+                if (!lift.moving) {
+                    processNextFloor(liftId);
+                }
+            }
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = `Status: ${message}`;
+        }
+        
+        function resetSimulation() {
+            lifts.forEach(lift => {
+                lift.currentFloor = 1;
+                lift.targetFloors = [];
+                lift.moving = false;
+                lift.direction = null;
+                updateLiftPosition(lift);
+            });
+            updateStatus('Simulation reset. All lifts returned to ground floor.');
+        }
+        
+        // Initialize lift positions
+        window.onload = () => {
+            lifts.forEach(lift => {
+                updateLiftPosition(lift);
+            });
+        };
+    </script>
+</body>
+</html>
